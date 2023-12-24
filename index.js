@@ -24,13 +24,27 @@ async function run() {
 
     const menuCollection = client.db("bistroDb").collection("menu");
     const reviewsCollection = client.db("bistroDb").collection("reviews");
+    const cartsCollection = client.db("bistroDb").collection("carts");
 
-    app.get('/menu', async(req, res) => {
+    app.get('/menu', async (req, res) => {
       const result = await menuCollection.find().toArray();
       res.send(result);
     })
-    app.get('/reviews', async(req, res) => {
+    app.get('/reviews', async (req, res) => {
       const result = await reviewsCollection.find().toArray();
+      res.send(result);
+    })
+
+    //  carts collection 
+    app.get('/carts', async(req, res) => {
+      const email = req.query.email;
+      const query = {email: email};
+      const result = await cartsCollection.find(query).toArray();
+      res.send(result);
+    })
+    app.post('/carts', async (req, res) => {
+      const cartItem = req.body;
+      const result = await cartsCollection.insertOne(cartItem);
       res.send(result);
     })
 
@@ -39,7 +53,7 @@ async function run() {
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
-   //  await client.close();
+    //  await client.close();
   }
 }
 run().catch(console.dir);
@@ -50,8 +64,8 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/', (req, res) => {
-   res.send('boss is sitting')
+  res.send('boss is sitting')
 })
-app.listen(port, ()=>{
-   console.log(`Bistro boss is sitting on port ${port}`)
+app.listen(port, () => {
+  console.log(`Bistro boss is sitting on port ${port}`)
 });

@@ -118,7 +118,7 @@ async function run() {
     })
     app.get('/menu/:id', async (req, res) => {
       const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
+      const query = { _id: id };
       const result = await menuCollection.findOne(query);
       res.send(result);
     })
@@ -127,9 +127,27 @@ async function run() {
       const result = await menuCollection.insertOne(item);
       res.send(result);
     })
+    app.patch('/menu/:idd', async (req, res) =>{
+      const idd = req.params.idd;
+      const item = req.body;
+      console.log('patched data', item);
+      const filter = {_id: idd};
+      const updatedDoc = {
+        $set: {
+          name: item.name,
+          category: item.category,
+          price: item.price,
+          recipe: item.recipe,
+          image: item.image,
+        }
+      }
+      const result = await menuCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    })
+    // app.patch('/menu/:id', async ())
     app.delete('/menu/:id', verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
+      const query = { _id: id };
       const result = await menuCollection.deleteOne(query);
       res.send(result);
     })

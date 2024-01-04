@@ -187,7 +187,7 @@ async function run() {
       console.log(amount , 'inside intent');
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
-        currency: 'usd',
+        currency: 'aud',
         payment_method_types: ['card']
       });
 

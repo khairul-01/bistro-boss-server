@@ -28,6 +28,7 @@ async function run() {
     const menuCollection = client.db("bistroDb").collection("menu");
     const reviewsCollection = client.db("bistroDb").collection("reviews");
     const cartsCollection = client.db("bistroDb").collection("carts");
+    const paymentsCollection = client.db("bistroDb").collection("payments");
 
     // jwt related api
     app.post('/jwt', async (req, res) => {
@@ -194,6 +195,57 @@ async function run() {
       res.send({
         clientSecret: paymentIntent.client_secret,
       })
+    })
+
+    app.get('/payments/:email', verifyToken, async (req, res) => {
+      const query = {email: req.params.email};
+      if(req.params.email !== req.decoded.email){
+        return res.status(403).send({message: 'forbidden access'})
+      }
+      const result = await paymentsCollection.find(query).toArray();
+      res.send(result);
+    })
+
+    app.post('/payments', async (req, res) => {
+      const payment = req.body;
+      const paymentResult = await paymentsCollection.insertOne(payment);
+
+      // carefully delete each item from the cart
+      console.log('payment info', payment);
+      const query = {_id: {
+        $in: payment.cartIds.map(id => new ObjectId(id))
+      }}
+      const deleteResult = await cartsCollection.deleteMany(query);
+      res.send({paymentResult, deleteResult});
+
+    })
+
+    // statistics or analytics
+    app.get('/admin-stats', verifyToken, verifyAdmin, async (req, res) => {
+      const users = await usersCollection.estimatedDocumentCount();
+      const menuItems = await menuCollection.estimatedDocumentCount();
+      const orders = await paymentsCollection.estimatedDocumentCount();
+
+      // const payments = await paymentsCollection.find().toArray();
+      // const revenue = payments.reduce((sum, payment) => sum +  payment.price, 0)
+      const result = await paymentsCollection.aggregate([
+        {
+          $group: {
+            _id: null,
+            totalRevenue: {
+              $sum: "$price",
+            }
+          }
+        }
+      ]).toArray();
+      const revenue = result.length>0 ? result[0].totalRevenue : 0;
+
+      res.send({
+        users,
+        menuItems,
+        orders,
+        revenue,
+      });
     })
 
     // Send a ping to confirm a successful connection
